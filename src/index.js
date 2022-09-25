@@ -39,7 +39,6 @@ server.post("/poll", async (req, res) => {
     return;
   }
   if (!expireAt) {
-    console.log(Date.now());
     newExpirationDate = dayjs(Date.now()).add(30, 'day').format("YYYY-MM-DD HH:mm");
   } else {
     newExpirationDate = expireAt;
@@ -49,12 +48,22 @@ server.post("/poll", async (req, res) => {
       title: title,
       expireAt: newExpirationDate
     });
-    console.log(newExpirationDate);
     res.sendStatus(201);
 
   } catch (error) {
     console.error(error);
     res.status(500).send("Requisição incompleta, verifique os dados enviados");
+  }
+});
+
+server.get("/poll", async (req, res) => {
+  try {
+    const polls = await db.collection("poll").find().toArray();
+    res.send(polls);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Resposta incompleta, verifique os dados solicitados");
   }
 });
 
