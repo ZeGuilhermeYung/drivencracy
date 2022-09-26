@@ -83,7 +83,9 @@ server.post("/choice", async (req, res) => {
   }
 
   try {
-    const poll = await db.collection("poll").findOne({ _id: ObjectId(pollId) });
+    const poll = await db.collection("poll").findOne({
+      _id: ObjectId(pollId)
+    });
 
     const choices = await db.collection("choice").find({
       pollId: ObjectId(pollId)
@@ -113,6 +115,30 @@ server.post("/choice", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send("Requisição incompleta, verifique os dados enviados");
+  }
+});
+
+server.get("/poll/:id/choice", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const poll = await db.collection("poll").findOne({
+      _id: ObjectId(id)
+    });
+
+    if (!poll) {
+      res.status(404).send("Não há enquete com este valor de Id.");
+      return;
+    }
+
+    const choices = await db.collection("choice").find({
+      pollId: ObjectId(id)
+    }).toArray();
+    res.send(choices);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Resposta incompleta, verifique os dados solicitados");
   }
 });
 
