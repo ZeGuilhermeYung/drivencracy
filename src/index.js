@@ -142,5 +142,87 @@ server.get("/poll/:id/choice", async (req, res) => {
   }
 });
 
+server.post("/choice/:id/vote", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const choice = await db.collection("choice").findOne({
+      _id: ObjectId(id)
+    });
+
+    if (!choice) {
+      res.status(404).send("Não é uma opção existente.");
+      return;
+    }
+    
+    const poll = await db.collection("poll").findOne({
+      _id: ObjectId(choice.pollId)
+    });
+
+    if (dayjs(poll.expireAt).valueOf() < Date.now()) {
+      res.status(403).send("Data de enquete já expirada.");
+      return;
+    }
+
+    await db.collection("vote").insertOne({
+      createdAt: dayjs().format("YYYY-MM-DD HH:mm"),
+      choiceId: ObjectId(id),
+    });
+    res.sendStatus(201);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Requisição incompleta, verifique os dados enviados");
+  }
+});
+
+server.get("/poll/:id/result", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const poll = await db.collection('poll').findOne({
+      _id: ObjectId(id)
+    });
+
+    if (!poll) {
+      res.status(404).send("Esta enquete não existe.");
+      return;
+    }
+    
+    const choice = await db.collection('choice').find({
+      pollId: ObjectId(id)
+    }).toArray();
+
+    let index = 0;
+    let mostVoted = 0;
+
+    const votes = await Promise.all (choice.map(async value => {
+      const elemvotes = await db.collection('votes').find({
+        choiceId: value._id
+      }).toArray();
+      return {
+        title: value.title,
+        votes: elemvotes.length
+      };
+    }));
+
+    votes.forEach((value, i) => {
+      if (value.votes > mostVoted) {
+        mostVoted = value.votes
+        index = i
+      };
+    });
+
+    finalResult = {
+      ...poll,
+      result: votes[index]
+    };
+    res.send(finalResult);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Resposta incompleta, verifique os dados solicitados");
+  }
+});
 
 server.listen(5000);
