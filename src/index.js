@@ -213,7 +213,7 @@ server.get("/poll/:id/result", async (req, res) => {
       };
     });
 
-    finalResult = {
+    const finalResult = {
       ...poll,
       result: votes[index]
     };
